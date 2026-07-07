@@ -16,10 +16,21 @@
     "url": "git+https://github.com/YoungMayor/sqlite-practice.git"
   },
   "license": "MIT",
-  "author": "Aghogho Meyoron",
+  "author": {
+    "email": "youngmayor.dev@gmail.com",
+    "name": "Aghogho Meyoron",
+    "url": "https://mayrlabs.com"
+  },
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
+    "setup": "node scripts/setup.js",
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@faker-js/faker": "^8.4.1",
+    "better-sqlite3": "^11.3.0",
+    "chalk": "^4.1.2",
+    "inquirer": "^8.2.6"
   }
 }

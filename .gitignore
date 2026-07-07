@@ -1,0 +1,8 @@
+node_modules/
+*.log
+.DS_Store
+
+# Generated database files live in db/, but the folder itself is tracked
+db/*.sqlite
+!db/
+!db/.gitkeep
