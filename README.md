@@ -22,15 +22,15 @@ npm run setup
 
 ## Database types
 
-| Type | Tables |
-| --- | --- |
-| Commerce | `categories`, `customers`, `addresses`, `coupons`, `products`, `orders`, `order_items`, `reviews` |
-| Education | `classrooms`, `teachers`, `students`, `courses`, `enrollments`, `assignments`, `attendance` |
-| Movies | `studios`, `directors`, `actors`, `movies`, `movie_cast`, `reviews`, `awards` |
-| Social Media | `users`, `posts`, `comments`, `likes`, `follows`, `hashtags`, `post_hashtags`, `messages` |
-| Healthcare | `hospitals`, `doctors`, `patients`, `appointments`, `prescriptions` |
-| Library | `authors`, `books`, `members`, `loans`, `reservations` |
-| Food Delivery | `restaurants`, `menu_items`, `customers`, `drivers`, `orders`, `order_items` |
+| Type          | Tables                                                                                            |
+| ------------- | ------------------------------------------------------------------------------------------------- |
+| Commerce      | `categories`, `customers`, `addresses`, `coupons`, `products`, `orders`, `order_items`, `reviews` |
+| Education     | `classrooms`, `teachers`, `students`, `courses`, `enrollments`, `assignments`, `attendance`       |
+| Movies        | `studios`, `directors`, `actors`, `movies`, `movie_cast`, `reviews`, `awards`                     |
+| Social Media  | `users`, `posts`, `comments`, `likes`, `follows`, `hashtags`, `post_hashtags`, `messages`         |
+| Healthcare    | `hospitals`, `doctors`, `patients`, `appointments`, `prescriptions`                               |
+| Library       | `authors`, `books`, `members`, `loans`, `reservations`                                            |
+| Food Delivery | `restaurants`, `menu_items`, `customers`, `drivers`, `orders`, `order_items`                      |
 
 Each database lands at `db/{type}-database.sqlite` — for example `db/commerce-database.sqlite`.
 
@@ -46,7 +46,7 @@ Or point a GUI tool like [DB Browser for SQLite](https://sqlitebrowser.org/) or 
 
 ## Project structure
 
-```
+```plain
 scripts/
   setup.js           interactive CLI entry point
   lib/                shared helpers (db access, personalization)
