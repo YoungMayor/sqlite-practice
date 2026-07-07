@@ -6,11 +6,14 @@ const COUNTS = {
   comments: 40000,
   likes: 60000,
   follows: 15000,
+  hashtags: 200,
+  postHashtagsPerPost: [0, 4],
+  messages: 10000,
 };
 
 module.exports = {
   key: "social-media",
-  label: "Social Media (users, posts, comments, likes, follows)",
+  label: "Social Media (users, posts, comments, likes, follows, hashtags, messages)",
 
   build(db, faker, log) {
     db.exec(`
@@ -52,6 +55,26 @@ module.exports = {
         followed_at TEXT NOT NULL
       );
 
+      CREATE TABLE hashtags (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tag TEXT NOT NULL UNIQUE
+      );
+
+      CREATE TABLE post_hashtags (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        post_id INTEGER NOT NULL REFERENCES posts(id),
+        hashtag_id INTEGER NOT NULL REFERENCES hashtags(id)
+      );
+
+      CREATE TABLE messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        sender_id INTEGER NOT NULL REFERENCES users(id),
+        recipient_id INTEGER NOT NULL REFERENCES users(id),
+        content TEXT NOT NULL,
+        sent_at TEXT NOT NULL,
+        read_at TEXT
+      );
+
       CREATE INDEX idx_posts_user ON posts(user_id);
       CREATE INDEX idx_comments_post ON comments(post_id);
       CREATE INDEX idx_comments_user ON comments(user_id);
@@ -59,6 +82,10 @@ module.exports = {
       CREATE INDEX idx_likes_user ON likes(user_id);
       CREATE INDEX idx_follows_follower ON follows(follower_id);
       CREATE INDEX idx_follows_followee ON follows(followee_id);
+      CREATE INDEX idx_post_hashtags_post ON post_hashtags(post_id);
+      CREATE INDEX idx_post_hashtags_hashtag ON post_hashtags(hashtag_id);
+      CREATE INDEX idx_messages_sender ON messages(sender_id);
+      CREATE INDEX idx_messages_recipient ON messages(recipient_id);
     `);
 
     const insertUser = db.prepare(`
@@ -78,16 +105,34 @@ module.exports = {
       );
     });
 
+    const insertHashtag = db.prepare(`INSERT INTO hashtags (tag) VALUES (?)`);
+    log(`Seeding ${COUNTS.hashtags} hashtags...`);
+    seedTable(db, COUNTS.hashtags, () => {
+      insertHashtag.run(faker.word.sample().toLowerCase() + faker.number.int({ min: 0, max: 9999 }));
+    });
+
     const insertPost = db.prepare(`
       INSERT INTO posts (user_id, content, posted_at) VALUES (?, ?, ?)
     `);
-    log(`Seeding ${COUNTS.posts} posts...`);
+    const insertPostHashtag = db.prepare(`
+      INSERT INTO post_hashtags (post_id, hashtag_id) VALUES (?, ?)
+    `);
+    log(`Seeding ${COUNTS.posts} posts (with hashtags)...`);
     seedTable(db, COUNTS.posts, () => {
-      insertPost.run(
+      const info = insertPost.run(
         faker.number.int({ min: 1, max: COUNTS.users }),
         faker.lorem.sentences({ min: 1, max: 3 }),
         faker.date.past({ years: 3 }).toISOString()
       );
+      const postId = info.lastInsertRowid;
+      const tagCount = faker.number.int({ min: COUNTS.postHashtagsPerPost[0], max: COUNTS.postHashtagsPerPost[1] });
+      const usedHashtags = new Set();
+      for (let j = 0; j < tagCount; j++) {
+        const hashtagId = faker.number.int({ min: 1, max: COUNTS.hashtags });
+        if (usedHashtags.has(hashtagId)) continue;
+        usedHashtags.add(hashtagId);
+        insertPostHashtag.run(postId, hashtagId);
+      }
     });
 
     const insertComment = db.prepare(`
@@ -124,6 +169,25 @@ module.exports = {
       let followee = faker.number.int({ min: 1, max: COUNTS.users });
       if (follower === followee) followee = (followee % COUNTS.users) + 1;
       insertFollow.run(follower, followee, faker.date.past({ years: 4 }).toISOString());
+    });
+
+    const insertMessage = db.prepare(`
+      INSERT INTO messages (sender_id, recipient_id, content, sent_at, read_at) VALUES (?, ?, ?, ?, ?)
+    `);
+    log(`Seeding ${COUNTS.messages} messages...`);
+    seedTable(db, COUNTS.messages, () => {
+      let sender = faker.number.int({ min: 1, max: COUNTS.users });
+      let recipient = faker.number.int({ min: 1, max: COUNTS.users });
+      if (sender === recipient) recipient = (recipient % COUNTS.users) + 1;
+      const sentAt = faker.date.past({ years: 2 });
+      const isRead = faker.datatype.boolean({ probability: 0.6 });
+      insertMessage.run(
+        sender,
+        recipient,
+        faker.lorem.sentence(),
+        sentAt.toISOString(),
+        isRead ? faker.date.between({ from: sentAt, to: new Date() }).toISOString() : null
+      );
     });
   },
 };

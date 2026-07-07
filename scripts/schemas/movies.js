@@ -1,19 +1,28 @@
 const { seedTable } = require("../lib/db");
 
 const COUNTS = {
+  studios: 60,
   directors: 400,
   actors: 1500,
   movies: 3000,
   castPerMovie: [2, 8],
   reviews: 6000,
+  awards: 1500,
 };
 
 module.exports = {
   key: "movies",
-  label: "Movies (movies, actors, directors, cast, reviews)",
+  label: "Movies (movies, actors, directors, studios, cast, reviews, awards)",
 
   build(db, faker, log) {
     db.exec(`
+      CREATE TABLE studios (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        founded_year INTEGER NOT NULL,
+        country TEXT NOT NULL
+      );
+
       CREATE TABLE directors (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
@@ -35,6 +44,7 @@ module.exports = {
         release_year INTEGER NOT NULL,
         runtime_minutes INTEGER NOT NULL,
         director_id INTEGER NOT NULL REFERENCES directors(id),
+        studio_id INTEGER NOT NULL REFERENCES studios(id),
         budget_usd INTEGER NOT NULL,
         revenue_usd INTEGER NOT NULL
       );
@@ -55,11 +65,34 @@ module.exports = {
         created_at TEXT NOT NULL
       );
 
+      CREATE TABLE awards (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        movie_id INTEGER NOT NULL REFERENCES movies(id),
+        name TEXT NOT NULL,
+        category TEXT NOT NULL,
+        year INTEGER NOT NULL,
+        won INTEGER NOT NULL
+      );
+
       CREATE INDEX idx_movies_director ON movies(director_id);
+      CREATE INDEX idx_movies_studio ON movies(studio_id);
       CREATE INDEX idx_cast_movie ON movie_cast(movie_id);
       CREATE INDEX idx_cast_actor ON movie_cast(actor_id);
       CREATE INDEX idx_reviews_movie ON reviews(movie_id);
+      CREATE INDEX idx_awards_movie ON awards(movie_id);
     `);
+
+    const insertStudio = db.prepare(`
+      INSERT INTO studios (name, founded_year, country) VALUES (?, ?, ?)
+    `);
+    log(`Seeding ${COUNTS.studios} studios...`);
+    seedTable(db, COUNTS.studios, () => {
+      insertStudio.run(
+        `${faker.company.name()} Studios`,
+        faker.number.int({ min: 1912, max: 2020 }),
+        faker.location.country()
+      );
+    });
 
     const insertDirector = db.prepare(`
       INSERT INTO directors (name, birth_date, country) VALUES (?, ?, ?)
@@ -87,8 +120,8 @@ module.exports = {
 
     const genres = ["Action", "Comedy", "Drama", "Horror", "Sci-Fi", "Romance", "Documentary", "Animation", "Thriller"];
     const insertMovie = db.prepare(`
-      INSERT INTO movies (title, genre, release_year, runtime_minutes, director_id, budget_usd, revenue_usd)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO movies (title, genre, release_year, runtime_minutes, director_id, studio_id, budget_usd, revenue_usd)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
     const insertCast = db.prepare(`
       INSERT INTO movie_cast (movie_id, actor_id, role_name) VALUES (?, ?, ?)
@@ -102,6 +135,7 @@ module.exports = {
         faker.number.int({ min: 1960, max: 2026 }),
         faker.number.int({ min: 75, max: 210 }),
         faker.number.int({ min: 1, max: COUNTS.directors }),
+        faker.number.int({ min: 1, max: COUNTS.studios }),
         budget,
         Math.round(budget * faker.number.float({ min: 0.2, max: 4, fractionDigits: 2 }))
       );
@@ -128,6 +162,22 @@ module.exports = {
         Number(faker.number.float({ min: 1, max: 10, fractionDigits: 1 })),
         faker.lorem.sentence(),
         faker.date.past({ years: 5 }).toISOString()
+      );
+    });
+
+    const awardNames = ["Golden Reel", "Silver Screen Award", "Cinematic Excellence Award", "Critics Choice Award", "International Film Prize"];
+    const awardCategories = ["Best Picture", "Best Director", "Best Actor", "Best Actress", "Best Screenplay", "Best Cinematography", "Best Score"];
+    const insertAward = db.prepare(`
+      INSERT INTO awards (movie_id, name, category, year, won) VALUES (?, ?, ?, ?, ?)
+    `);
+    log(`Seeding ${COUNTS.awards} awards...`);
+    seedTable(db, COUNTS.awards, () => {
+      insertAward.run(
+        faker.number.int({ min: 1, max: COUNTS.movies }),
+        faker.helpers.arrayElement(awardNames),
+        faker.helpers.arrayElement(awardCategories),
+        faker.number.int({ min: 1960, max: 2026 }),
+        faker.datatype.boolean({ probability: 0.3 }) ? 1 : 0
       );
     });
   },

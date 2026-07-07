@@ -1,18 +1,28 @@
 const { seedTable } = require("../lib/db");
 
 const COUNTS = {
+  classrooms: 40,
   teachers: 150,
   students: 2500,
   courses: 300,
   enrollments: 7000,
+  assignments: 1200,
+  attendance: 10000,
 };
 
 module.exports = {
   key: "education",
-  label: "Education (students, teachers, courses, enrollments)",
+  label: "Education (students, teachers, courses, enrollments, assignments, attendance)",
 
   build(db, faker, log) {
     db.exec(`
+      CREATE TABLE classrooms (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        room_code TEXT NOT NULL UNIQUE,
+        building TEXT NOT NULL,
+        capacity INTEGER NOT NULL
+      );
+
       CREATE TABLE teachers (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         first_name TEXT NOT NULL,
@@ -37,7 +47,8 @@ module.exports = {
         title TEXT NOT NULL,
         department TEXT NOT NULL,
         credits INTEGER NOT NULL,
-        teacher_id INTEGER NOT NULL REFERENCES teachers(id)
+        teacher_id INTEGER NOT NULL REFERENCES teachers(id),
+        classroom_id INTEGER NOT NULL REFERENCES classrooms(id)
       );
 
       CREATE TABLE enrollments (
@@ -49,12 +60,43 @@ module.exports = {
         enrolled_at TEXT NOT NULL
       );
 
+      CREATE TABLE assignments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        course_id INTEGER NOT NULL REFERENCES courses(id),
+        title TEXT NOT NULL,
+        due_at TEXT NOT NULL,
+        max_score INTEGER NOT NULL
+      );
+
+      CREATE TABLE attendance (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        enrollment_id INTEGER NOT NULL REFERENCES enrollments(id),
+        attended_on TEXT NOT NULL,
+        status TEXT NOT NULL
+      );
+
       CREATE INDEX idx_courses_teacher ON courses(teacher_id);
+      CREATE INDEX idx_courses_classroom ON courses(classroom_id);
       CREATE INDEX idx_enrollments_student ON enrollments(student_id);
       CREATE INDEX idx_enrollments_course ON enrollments(course_id);
+      CREATE INDEX idx_assignments_course ON assignments(course_id);
+      CREATE INDEX idx_attendance_enrollment ON attendance(enrollment_id);
     `);
 
     const departments = ["Mathematics", "Computer Science", "Physics", "Literature", "History", "Biology", "Economics", "Art"];
+    const buildings = ["North Hall", "South Hall", "Science Building", "Arts Center", "Main Building"];
+
+    const insertClassroom = db.prepare(`
+      INSERT INTO classrooms (room_code, building, capacity) VALUES (?, ?, ?)
+    `);
+    log(`Seeding ${COUNTS.classrooms} classrooms...`);
+    seedTable(db, COUNTS.classrooms, (i) => {
+      insertClassroom.run(
+        `RM-${100 + i}`,
+        faker.helpers.arrayElement(buildings),
+        faker.helpers.arrayElement([20, 30, 40, 60, 100])
+      );
+    });
 
     const insertTeacher = db.prepare(`
       INSERT INTO teachers (first_name, last_name, email, department, hired_at)
@@ -92,8 +134,8 @@ module.exports = {
     });
 
     const insertCourse = db.prepare(`
-      INSERT INTO courses (title, department, credits, teacher_id)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO courses (title, department, credits, teacher_id, classroom_id)
+      VALUES (?, ?, ?, ?, ?)
     `);
     log(`Seeding ${COUNTS.courses} courses...`);
     seedTable(db, COUNTS.courses, () => {
@@ -102,7 +144,8 @@ module.exports = {
         `${department} ${faker.number.int({ min: 100, max: 499 })}: ${faker.company.buzzNoun()}`,
         department,
         faker.helpers.arrayElement([1, 2, 3, 4]),
-        faker.number.int({ min: 1, max: COUNTS.teachers })
+        faker.number.int({ min: 1, max: COUNTS.teachers }),
+        faker.number.int({ min: 1, max: COUNTS.classrooms })
       );
     });
 
@@ -120,6 +163,32 @@ module.exports = {
         faker.helpers.arrayElement(semesters),
         faker.helpers.arrayElement(grades),
         faker.date.past({ years: 2 }).toISOString()
+      );
+    });
+
+    const insertAssignment = db.prepare(`
+      INSERT INTO assignments (course_id, title, due_at, max_score) VALUES (?, ?, ?, ?)
+    `);
+    log(`Seeding ${COUNTS.assignments} assignments...`);
+    seedTable(db, COUNTS.assignments, () => {
+      insertAssignment.run(
+        faker.number.int({ min: 1, max: COUNTS.courses }),
+        `${faker.company.buzzVerb()} ${faker.company.buzzNoun()} Assignment`,
+        faker.date.past({ years: 2 }).toISOString(),
+        faker.helpers.arrayElement([50, 100, 100, 100, 20])
+      );
+    });
+
+    const attendanceStatuses = ["present", "absent", "late", "excused"];
+    const insertAttendance = db.prepare(`
+      INSERT INTO attendance (enrollment_id, attended_on, status) VALUES (?, ?, ?)
+    `);
+    log(`Seeding ${COUNTS.attendance} attendance records...`);
+    seedTable(db, COUNTS.attendance, () => {
+      insertAttendance.run(
+        faker.number.int({ min: 1, max: COUNTS.enrollments }),
+        faker.date.past({ years: 1 }).toISOString(),
+        faker.helpers.arrayElement(attendanceStatuses)
       );
     });
   },

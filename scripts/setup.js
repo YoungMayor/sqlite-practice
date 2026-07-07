@@ -12,6 +12,9 @@ const SCHEMAS = [
   require("./schemas/education"),
   require("./schemas/movies"),
   require("./schemas/social-media"),
+  require("./schemas/healthcare"),
+  require("./schemas/library"),
+  require("./schemas/food-delivery"),
 ];
 
 function log(message) {

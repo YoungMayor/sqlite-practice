@@ -15,7 +15,7 @@ npm run setup
 
 `npm run setup` walks you through everything interactively:
 
-1. Pick a database type — Commerce, Education, Movies, or Social Media.
+1. Pick a database type — Commerce, Education, Movies, Social Media, Healthcare, Library, or Food Delivery.
 2. If that database doesn't exist yet, it gets created and populated for you.
 3. If it already exists, you'll be asked whether to refresh it. Refreshing wipes the old data (this can't be undone), so you'll be asked to confirm before anything is deleted.
 4. Tables are created and filled with thousands of realistic fake records using [Faker](https://fakerjs.dev/).
@@ -24,10 +24,13 @@ npm run setup
 
 | Type | Tables |
 | --- | --- |
-| Commerce | `customers`, `products`, `orders`, `order_items`, `reviews` |
-| Education | `teachers`, `students`, `courses`, `enrollments` |
-| Movies | `directors`, `actors`, `movies`, `movie_cast`, `reviews` |
-| Social Media | `users`, `posts`, `comments`, `likes`, `follows` |
+| Commerce | `categories`, `customers`, `addresses`, `coupons`, `products`, `orders`, `order_items`, `reviews` |
+| Education | `classrooms`, `teachers`, `students`, `courses`, `enrollments`, `assignments`, `attendance` |
+| Movies | `studios`, `directors`, `actors`, `movies`, `movie_cast`, `reviews`, `awards` |
+| Social Media | `users`, `posts`, `comments`, `likes`, `follows`, `hashtags`, `post_hashtags`, `messages` |
+| Healthcare | `hospitals`, `doctors`, `patients`, `appointments`, `prescriptions` |
+| Library | `authors`, `books`, `members`, `loans`, `reservations` |
+| Food Delivery | `restaurants`, `menu_items`, `customers`, `drivers`, `orders`, `order_items` |
 
 Each database lands at `db/{type}-database.sqlite` — for example `db/commerce-database.sqlite`.
 
