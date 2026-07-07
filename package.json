@@ -1,0 +1,25 @@
+{
+  "name": "sqlite-practice",
+  "version": "1.0.0",
+  "description": "SQLite DB generators for practice",
+  "keywords": [
+    "SQLite",
+    "Data",
+    "Analysis"
+  ],
+  "homepage": "https://github.com/YoungMayor/sqlite-practice#readme",
+  "bugs": {
+    "url": "https://github.com/YoungMayor/sqlite-practice/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YoungMayor/sqlite-practice.git"
+  },
+  "license": "MIT",
+  "author": "Aghogho Meyoron",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
